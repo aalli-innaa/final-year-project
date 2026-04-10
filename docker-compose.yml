@@ -1,0 +1,17 @@
+services:
+  postgres:
+    container_name: skincare_ai
+    image: postgres:17.5
+    environment:
+      POSTGRES_USER: alina
+      POSTGRES_PASSWORD: alina210401025
+      PGDATA: /data/postgres
+      POSTGRES_DB: skincare_db
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres:
