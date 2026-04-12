@@ -23,6 +23,13 @@ public class IngredientService {
     private final IngredientRepository ingredientRepository;
     private final IngredientBenefitRepository benefitRepository;
 
+    @Transactional(readOnly = true)
+    public List<IngredientResponse> getAllActiveIngredients() { // <--- Должно быть так
+        return ingredientRepository.findAllByIsActiveTrue().stream()
+                .map(IngredientResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public IngredientResponse createIngredient(IngredientRequest request) {
         if (ingredientRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
@@ -34,31 +41,19 @@ public class IngredientService {
                 .description(request.getDescription())
                 .irritationLevel(request.getIrritationLevel())
                 .comedogenicLevel(request.getComedogenicLevel())
+                .minAge(request.getMinAge() != null ? request.getMinAge() : 0) // Добавлено
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
 
         return IngredientResponse.fromEntity(ingredientRepository.save(ingredient));
     }
 
-    @Transactional(readOnly = true)
-    public List<IngredientResponse> getAllActiveIngredients() {
-        return ingredientRepository.findAllByIsActiveTrue().stream()
-                .map(IngredientResponse::fromEntity)
-                .collect(Collectors.toList());
-    }
-
     @Transactional
     public IngredientResponse patchIngredient(Long id, IngredientRequest request) {
-        // 1. Ищем существующий ингредиент
         Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.INTERNAL_EXCEPTION,
-                        "Ингредиент с id " + id + " не найден"
-                ));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_EXCEPTION, "Ингредиент не найден"));
 
-        // 2. Обновляем только те поля, которые прислал пользователь (не null)
         if (request.getName() != null) {
-            // Проверяем на уникальность имени, если оно меняется
             ingredientRepository.findByNameIgnoreCase(request.getName())
                     .ifPresent(existing -> {
                         if (!existing.getId().equals(id)) {
@@ -68,23 +63,12 @@ public class IngredientService {
             ingredient.setName(request.getName());
         }
 
-        if (request.getDescription() != null) {
-            ingredient.setDescription(request.getDescription());
-        }
+        if (request.getDescription() != null) ingredient.setDescription(request.getDescription());
+        if (request.getIrritationLevel() != null) ingredient.setIrritationLevel(request.getIrritationLevel());
+        if (request.getComedogenicLevel() != null) ingredient.setComedogenicLevel(request.getComedogenicLevel());
+        if (request.getMinAge() != null) ingredient.setMinAge(request.getMinAge()); // Добавлено
+        if (request.getIsActive() != null) ingredient.setIsActive(request.getIsActive());
 
-        if (request.getIrritationLevel() != null) {
-            ingredient.setIrritationLevel(request.getIrritationLevel());
-        }
-
-        if (request.getComedogenicLevel() != null) {
-            ingredient.setComedogenicLevel(request.getComedogenicLevel());
-        }
-
-        if (request.getIsActive() != null) {
-            ingredient.setIsActive(request.getIsActive());
-        }
-
-        // 3. Сохраняем и возвращаем результат
         return IngredientResponse.fromEntity(ingredientRepository.save(ingredient));
     }
 

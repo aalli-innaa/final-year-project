@@ -25,10 +25,13 @@ public class Ingredient {
     private String description;
 
     @Column(name = "irritation_level")
-    private Integer irritationLevel; // 0-5
+    private Integer irritationLevel;
 
     @Column(name = "comedogenic_level")
-    private Integer comedogenicLevel; // 0-5
+    private Integer comedogenicLevel;
+
+    @Column(name = "min_age") // Добавлено
+    private Integer minAge;
 
     @Column(name = "is_active")
     @Builder.Default

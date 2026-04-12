@@ -16,5 +16,8 @@ public class IngredientRequest {
     @Min(0) @Max(5)
     private Integer comedogenicLevel;
 
+    @Min(0) // Добавлено
+    private Integer minAge;
+
     private Boolean isActive;
 }

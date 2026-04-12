@@ -24,8 +24,8 @@ public class IngredientController {
     private final IngredientService ingredientService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')") // Только админ может добавлять
-    @Operation(summary = "Добавить новый ингредиент (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Добавить новый ингредиент (с указанием min_age и уровней раздражения)")
     public ResponseEntity<IngredientResponse> create(@Valid @RequestBody IngredientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ingredientService.createIngredient(request));
     }
@@ -38,18 +38,16 @@ public class IngredientController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Частично обновить данные ингредиента (Admin only)")
+    @Operation(summary = "Частично обновить данные (можно поменять только min_age или название)")
     public ResponseEntity<IngredientResponse> patch(
             @PathVariable Long id,
-            @RequestBody IngredientRequest request) { // Убираем @Valid для PATCH, либо делаем поля в DTO необязательными
+            @RequestBody IngredientRequest request) {
         return ResponseEntity.ok(ingredientService.patchIngredient(id, request));
     }
 
-
-
     @PostMapping("/{id}/benefits")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Какой ингредиент от какой «болячки» помогает")
+    @Operation(summary = "Назначить суперсилу ингредиенту (например: Ретинол -> WRINKLES, сила 0.9)")
     public ResponseEntity<Void> addBenefit(
             @PathVariable Long id,
             @RequestParam SkinConcern concern,

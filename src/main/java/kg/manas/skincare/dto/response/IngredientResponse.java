@@ -9,6 +9,7 @@ public record IngredientResponse(
         String description,
         Integer irritationLevel,
         Integer comedogenicLevel,
+        Integer minAge, // Добавлено
         Boolean isActive
 ) {
     public static IngredientResponse fromEntity(Ingredient ingredient) {
@@ -18,6 +19,7 @@ public record IngredientResponse(
                 ingredient.getDescription(),
                 ingredient.getIrritationLevel(),
                 ingredient.getComedogenicLevel(),
+                ingredient.getMinAge(), // Добавлено
                 ingredient.getIsActive()
         );
     }
