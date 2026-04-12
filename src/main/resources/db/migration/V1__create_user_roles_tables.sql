@@ -22,3 +22,12 @@ CREATE TABLE users (
 INSERT INTO Roles (role_id, role_name) VALUES
 (1, 'ROLE_ADMIN'),
 (2, 'ROLE_USER');
+
+INSERT INTO users (user_id, username, email,
+                   password, role_id, blocked,
+                   is_email_verified, created_at, updated_at)
+
+VALUES (1, 'admin', 'admin@gmail.com',
+        '$2a$12$P2vwH.C/yCDHPKNXccaUuOjItg3qCpfnMuBjLO56JrvlMUdACJsem',
+        1, false, true,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
