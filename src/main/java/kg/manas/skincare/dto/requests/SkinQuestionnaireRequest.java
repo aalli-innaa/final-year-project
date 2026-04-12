@@ -1,9 +1,12 @@
 package kg.manas.skincare.dto.requests;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import kg.manas.skincare.enums.SkinType;
 import lombok.*;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -46,4 +49,14 @@ public class SkinQuestionnaireRequest {
             description = "Вопрос 5: На что похожа кожа летом? (OILY/DRY/COMBINATION/SENSITIVE)"
     )
     private SkinType question5;
+
+    @NotNull(message = "Дата рождения обязательна")
+    @Past(message = "Дата рождения должна быть в прошлом")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Schema(example = "1998-05-14", description = "Дата рождения (формат: yyyy-MM-dd)")
+    private LocalDate birthDate;
+
+    @NotNull(message = "Пол обязателен")
+    @Schema(example = "FEMALE", description = "Пол: MALE или FEMALE")
+    private String gender;
 }

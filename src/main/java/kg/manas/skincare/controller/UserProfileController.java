@@ -22,33 +22,33 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     /**
-     * Создать профиль пользователя (после регистрации, заполнить анкету)
+     * Создать профиль — заполнить анкету после регистрации
      * POST /api/v1/user-profiles
      */
     @PostMapping
-    @Operation(summary = "Создать профиль пользователя через анкету (5 вопросов)")
+    @Operation(summary = "Создать профиль: 5 вопросов + дата рождения + пол")
     public ResponseEntity<UserProfileResponse> createProfile(
             @Valid @RequestBody SkinQuestionnaireRequest request,
             Authentication principal) {
         Long userId = getUserId(principal);
-        UserProfileResponse response = userProfileService.createProfileFromQuestionnaire(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userProfileService.createProfileFromQuestionnaire(userId, request));
     }
 
     /**
-     * Получить профиль пользователя
+     * Получить свой профиль
      * GET /api/v1/user-profiles/me
      */
     @GetMapping("/me")
     @Operation(summary = "Получить мой профиль")
     public ResponseEntity<UserProfileResponse> getMyProfile(Authentication principal) {
         Long userId = getUserId(principal);
-        UserProfileResponse response = userProfileService.getProfile(userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userProfileService.getProfile(userId));
     }
 
     /**
-     * Обновить профиль (переответить на анкету)
+     * Обновить профиль — пересдать анкету
      * PUT /api/v1/user-profiles/me
      */
     @PutMapping("/me")
@@ -57,13 +57,10 @@ public class UserProfileController {
             @Valid @RequestBody SkinQuestionnaireRequest request,
             Authentication principal) {
         Long userId = getUserId(principal);
-        UserProfileResponse response = userProfileService.updateProfileFromQuestionnaire(userId, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                userProfileService.updateProfileFromQuestionnaire(userId, request));
     }
 
-    /**
-     * Вспомогательный метод для извлечения user_id из токена
-     */
     private Long getUserId(Authentication principal) {
         return ((PersonDetails) principal.getPrincipal()).getUser().getUserId();
     }
