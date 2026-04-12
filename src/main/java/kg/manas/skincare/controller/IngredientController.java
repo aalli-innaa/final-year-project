@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kg.manas.skincare.dto.requests.IngredientRequest;
 import kg.manas.skincare.dto.response.IngredientResponse;
+import kg.manas.skincare.enums.SkinConcern;
 import kg.manas.skincare.service.IngredientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,5 +43,18 @@ public class IngredientController {
             @PathVariable Long id,
             @RequestBody IngredientRequest request) { // Убираем @Valid для PATCH, либо делаем поля в DTO необязательными
         return ResponseEntity.ok(ingredientService.patchIngredient(id, request));
+    }
+
+
+
+    @PostMapping("/{id}/benefits")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Какой ингредиент от какой «болячки» помогает")
+    public ResponseEntity<Void> addBenefit(
+            @PathVariable Long id,
+            @RequestParam SkinConcern concern,
+            @RequestParam Double score) {
+        ingredientService.addBenefitToIngredient(id, concern, score);
+        return ResponseEntity.ok().build();
     }
 }
