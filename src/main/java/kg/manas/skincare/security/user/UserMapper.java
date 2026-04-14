@@ -25,9 +25,9 @@ public class UserMapper {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(this.passwordEncoder.encode(request.getPassword()))
-                .enabled(true)
+//                .enabled(true)
                 .blocked(false)
-                .expired(false)
+//                .expired(false)
                 .isEmailVerified(false)
                 .build();
     }

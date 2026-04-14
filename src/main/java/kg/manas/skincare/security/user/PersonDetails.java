@@ -35,23 +35,20 @@ public class PersonDetails implements UserDetails {
         return this.user.getEmail();
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+//    @Override
+//    public boolean isAccountNonExpired() {
+//        return true;
+//    }
 
     @Override
     public boolean isAccountNonLocked() {
         return !this.user.isBlocked();
     }
+//
+//    @Override
+//    public boolean isCredentialsNonExpired() {
+//        return UserDetails.super.isCredentialsNonExpired();
+//    }
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
-    }
 
-    @Override
-    public boolean isEnabled() {
-        return this.user.isEnabled();
-    }
 }

@@ -2,13 +2,19 @@ package kg.manas.skincare.service;
 
 import kg.manas.skincare.dto.requests.ChangePasswordRequest;
 import kg.manas.skincare.dto.requests.ProfileUpdateRequest;
+import kg.manas.skincare.dto.response.SimpleResponse;
+import kg.manas.skincare.dto.response.UserResponse;
+
+import java.util.List;
 
 public interface UserService {
 
-    void updateProfileInfo(ProfileUpdateRequest request, Long userId);
-    void changePassword(ChangePasswordRequest request, Long userId);
-    void blockAccount(Long userId);
-    void unblockAccount(Long userId);
-    void deleteAccount(Long userId);
+    SimpleResponse updateProfileInfo(ProfileUpdateRequest request, Long userId);
+    SimpleResponse changePassword(ChangePasswordRequest request, Long userId);
+    SimpleResponse blockAccount(Long userId);
+    SimpleResponse unblockAccount(Long userId);
+    SimpleResponse deleteAccount(Long userId);
+    List<UserResponse> getAllUsers();
+    UserResponse getUser(Long id);
 
 }

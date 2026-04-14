@@ -8,7 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-//@Data
 @Entity
 @Getter
 @Setter
@@ -33,15 +32,9 @@ public class User  {
     @Column(name="password")
     private String password;
 
-
-    @Column(name="enabled", nullable = false)
-    private boolean enabled = true;
-
     @Column(name="blocked", nullable = false)
     private boolean blocked = false;
 
-    @Column(name="expired", nullable = false)
-    private boolean expired = false;
 
     @Column(name="is_email_verified", nullable = false)
     private boolean isEmailVerified=false;
