@@ -4,6 +4,7 @@ import kg.manas.skincare.dto.requests.ChangePasswordRequest;
 import kg.manas.skincare.dto.requests.ProfileUpdateRequest;
 import kg.manas.skincare.dto.response.SimpleResponse;
 import kg.manas.skincare.dto.response.UserResponse;
+import kg.manas.skincare.model.User; // Добавь этот импорт
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface UserService {
     List<UserResponse> getAllUsers();
     UserResponse getUser(Long id);
 
+    // Добавляем этот метод, чтобы контроллер мог его вызвать
+    User getByEmail(String email);
 }

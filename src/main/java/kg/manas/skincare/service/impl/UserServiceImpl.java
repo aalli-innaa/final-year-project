@@ -139,4 +139,11 @@ public class UserServiceImpl implements UserService {
                 .map(this::mapToUserResponse)
                 .toList();
     }
+
+    // Твой новый метод для работы с анализом
+    @Override
+    public User getByEmail(String email) {
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
 }

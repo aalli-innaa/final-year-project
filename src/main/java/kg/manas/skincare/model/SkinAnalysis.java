@@ -1,0 +1,40 @@
+package kg.manas.skincare.model;
+
+import jakarta.persistence.*;
+import kg.manas.skincare.enums.SkinConcern;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "skin_analyses")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class SkinAnalysis {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long analysisId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "photo_id", nullable = false)
+    private UserPhoto userPhoto;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "primary_concern", nullable = false)
+    private SkinConcern primaryConcern;
+
+    private Double confidence;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+}
