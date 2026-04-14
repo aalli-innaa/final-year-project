@@ -2,6 +2,7 @@ package kg.manas.skincare.exceptions;
 
 import lombok.Getter;
 import org.springframework.boot.web.error.Error;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
 
 import javax.tools.Diagnostic;
@@ -18,7 +19,15 @@ public enum ErrorCode {
     ERR_USER_DISABLED("ERR_USER_DISABLED","User is disabled" , HttpStatus.UNAUTHORIZED),
     BAD_CREDENTIALS("BAD_CREDENTIALS","Username and / or password is incorrect" , HttpStatus.UNAUTHORIZED),
     USERNAME_NOT_FOUND("USERNAME_NOT_FOUND","Username not found" , HttpStatus.UNAUTHORIZED),
-    INTERNAL_EXCEPTION("INTERNAL_EXCEPTION","Internal server error" , HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_EXCEPTION("INTERNAL_EXCEPTION","Internal server error" , HttpStatus.INTERNAL_SERVER_ERROR),
+    PRODUCT_NOT_FOUND("PRODUCT_NOT_FOUND", "Product not found with id %s", HttpStatus.NOT_FOUND),
+    BARCODE_REQUIRED("BARCODE_REQUIRED","Barcode required", HttpStatus.BAD_REQUEST ),
+    FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "File uploaded failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    PRODUCT_REQUIRED("PRODUCT_REQUIRED","Product required", HttpStatus.BAD_REQUEST ),
+    IMAGE_NOT_FOUND("IMAGE_NOT_FOUND","Image not found" ,HttpStatus.BAD_REQUEST ),
+    FILE_REQUIRED("FILE_REQUIRED","File required", HttpStatus.BAD_REQUEST ),
+    TYPE_REQUIRED("TYPE_REQUIRED","Image type required" ,HttpStatus.BAD_REQUEST),
+    FILE_UPDATE_FAILED("FILE_UPDATE_FAILED","File update failed" ,HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String defaultMessage;
