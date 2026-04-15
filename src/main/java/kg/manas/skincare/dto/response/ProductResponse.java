@@ -17,8 +17,13 @@ public record ProductResponse(
         List<String> ingredientNames
 ) {
     public static ProductResponse fromEntity(Product product) {
-        // Получаем URL из связанной сущности Image (которую мы добавили в Product)
-        String url = (product.getImage() != null) ? product.getImage().getImageUrl() : null;
+        // 1. Сначала пробуем взять ссылку из текстового поля самого продукта
+        String url = product.getImageUrl();
+
+        // 2. Если там пусто, пробуем взять из связанной таблицы Image
+        if ((url == null || url.isEmpty()) && product.getImage() != null) {
+            url = product.getImage().getImageUrl();
+        }
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -26,7 +31,7 @@ public record ProductResponse(
                 .brand(product.getBrand())
                 .description(product.getDescription())
                 .usageInstructions(product.getUsageInstructions())
-                .imageUrl(url) // Берем из сущности Image
+                .imageUrl(url) // Теперь здесь будет либо ссылка из текста, либо из таблицы
                 .targetGender(product.getTargetGender())
                 .ingredientNames(product.getIngredients() != null
                         ? product.getIngredients().stream().map(Ingredient::getName).toList()

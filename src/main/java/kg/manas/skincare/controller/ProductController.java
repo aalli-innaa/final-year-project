@@ -33,4 +33,15 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getAll() {
         return ResponseEntity.ok(productService.getAllActiveProducts());
     }
+
+    // --- НОВЫЙ МЕТОД: ЧАСТИЧНОЕ ОБНОВЛЕНИЕ ---
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Обновить часть данных продукта (например, только ссылку на фото)")
+    public ResponseEntity<ProductResponse> update(
+            @PathVariable Long id,
+            @RequestBody ProductRequest request) {
+        return ResponseEntity.ok(productService.patchProduct(id, request));
+    }
+
 }

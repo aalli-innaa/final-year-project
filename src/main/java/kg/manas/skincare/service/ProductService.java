@@ -54,4 +54,38 @@ public class ProductService {
                 .map(ProductResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+
+
+
+    @Transactional
+    public ProductResponse patchProduct(Long id, ProductRequest request) {
+        // 1. Находим продукт
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        // 2. Обновляем простые текстовые поля (только если они не null)
+        if (request.name() != null) product.setName(request.name());
+        if (request.brand() != null) product.setBrand(request.brand());
+        if (request.description() != null) product.setDescription(request.description());
+        if (request.usageInstructions() != null) product.setUsageInstructions(request.usageInstructions());
+        if (request.targetGender() != null) product.setTargetGender(request.targetGender());
+        // imageUrl обычно обновляется через ImageController, но если нужно вручную:
+        if (request.imageUrl() != null) product.setImageUrl(request.imageUrl());
+
+        // 3. Обновляем типы кожи (если прислали новый список)
+        if (request.skinTypes() != null && !request.skinTypes().isEmpty()) {
+            product.setSuitableSkinTypes(request.skinTypes());
+        }
+
+        // 4. Обновляем состав ингредиентов (если прислали новые ID)
+        if (request.ingredientIds() != null && !request.ingredientIds().isEmpty()) {
+            Set<Ingredient> newIngredients = new HashSet<>(
+                    ingredientRepository.findAllById(request.ingredientIds())
+            );
+            product.setIngredients(newIngredients);
+        }
+
+        // 5. Сохраняем и возвращаем ответ
+        return ProductResponse.fromEntity(productRepository.save(product));
+    }
 }
