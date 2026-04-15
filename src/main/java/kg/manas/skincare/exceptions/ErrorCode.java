@@ -29,6 +29,7 @@ public enum ErrorCode {
     TYPE_REQUIRED("TYPE_REQUIRED","Image type required" ,HttpStatus.BAD_REQUEST),
     ACCESS_DENIED("FORBIDDEN", "У вас нет прав для этого действия",HttpStatus.FORBIDDEN),
     ANALYSIS_NOT_FOUND("ANALYSIS_NOT_FOUND", "Запись анализа не найдена", HttpStatus.NOT_FOUND),
+    PROFILE_REQUIRED("USER PROFILE NOT FOUND", "User profile not found. Please complete your profile to get a more accurate analysis", HttpStatus.BAD_REQUEST ),
     FILE_UPDATE_FAILED("FILE_UPDATE_FAILED","File update failed" ,HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
