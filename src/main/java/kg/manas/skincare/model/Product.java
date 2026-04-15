@@ -73,4 +73,8 @@ public class Product {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // В классе Product.java добавь это поле:
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
+    private Image image;
 }

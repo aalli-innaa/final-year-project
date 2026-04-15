@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -36,4 +38,9 @@ public class Ingredient {
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
+
+    // Внутри класса Ingredient.java
+
+    @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<IngredientBenefit> benefits; // Вот этого поля сейчас нет, поэтому выходит ошибка
 }
