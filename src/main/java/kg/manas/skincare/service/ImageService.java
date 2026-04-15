@@ -8,4 +8,6 @@ public interface ImageService {
     ImageResponse uploadProductImage(Long productId, MultipartFile file);
     ImageResponse getByProductId(Long productId);
     SimpleResponse deleteImage(Long imageId);
+    // ImageService.java
+    String uploadFile(MultipartFile file); // Просто загрузить файл и получить URL
 }

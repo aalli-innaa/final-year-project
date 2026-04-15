@@ -1,5 +1,6 @@
 package kg.manas.skincare.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kg.manas.skincare.dto.response.ImageResponse;
 import kg.manas.skincare.dto.response.SimpleResponse;
@@ -35,5 +36,12 @@ public class ImageController {
     @DeleteMapping("/{imageId}")
     public SimpleResponse deleteImage(@PathVariable Long imageId) {
         return imageService.deleteImage(imageId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Загрузить фото и получить ссылку")
+    public String uploadStandaloneImage(@RequestParam MultipartFile file) {
+        return imageService.uploadFile(file);
     }
 }

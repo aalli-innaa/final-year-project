@@ -29,6 +29,7 @@ public class ImageServiceImpl implements ImageService {
     private final ImageRepository imageRepository;
     private final ProductRepository productRepository;
 
+    // Базовый путь: storage/products/
     private static final String BASE_PATH = "storage/products/";
 
     @Transactional
@@ -40,23 +41,28 @@ public class ImageServiceImpl implements ImageService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // Ищем существующее изображение
-        Optional<Image> existingImageOpt = imageRepository.findByProduct_Id(productId);
-
         try {
+            // 1. Создаем путь: storage/products/{productId}/
             String dirPath = BASE_PATH + productId + "/";
             Files.createDirectories(Paths.get(dirPath));
 
-            // Если фото уже было — удаляем старый файл с диска
+            // 2. Если фото уже было в таблице images — удаляем старый файл с диска
+            Optional<Image> existingImageOpt = imageRepository.findByProduct_Id(productId);
             existingImageOpt.ifPresent(img -> deleteFileFromDisk(img.getImageUrl()));
 
-            // Генерируем новое имя и сохраняем
+            // 3. Генерируем имя и сохраняем файл
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filePath = Paths.get(dirPath).resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
+            // 4. Формируем URL: /products/{productId}/{fileName}
             String imageUrl = "/products/" + productId + "/" + fileName;
 
+            // 5. ОБНОВЛЯЕМ ТЕКСТОВОЕ ПОЛЕ В ТАБЛИЦЕ PRODUCTS (для синхронизации)
+            product.setImageUrl(imageUrl);
+            productRepository.save(product);
+
+            // 6. Обновляем или создаем запись в таблице IMAGES
             Image image;
             if (existingImageOpt.isPresent()) {
                 image = existingImageOpt.get();
@@ -69,12 +75,39 @@ public class ImageServiceImpl implements ImageService {
             }
 
             imageRepository.save(image);
-            log.info("Image updated/created for product {}: {}", productId, imageUrl);
+            log.info("Image saved in folder {} for product {}", dirPath, productId);
 
             return mapToResponse(image);
 
         } catch (IOException e) {
             log.error("Error saving file for product {}", productId, e);
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    // ImageServiceImpl.java
+
+    private static final String GENERAL_PATH = "storage/products/general/";
+
+    @Override
+    public String uploadFile(MultipartFile file) {
+        if (file == null || file.isEmpty())
+            throw new BusinessException(ErrorCode.FILE_REQUIRED);
+
+        try {
+            // Создаем общую папку storage/products/general/
+            Files.createDirectories(Paths.get(GENERAL_PATH));
+
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(GENERAL_PATH).resolve(fileName);
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Возвращаем чистую ссылку
+            return "/products/general/" + fileName;
+
+        } catch (IOException e) {
+            log.error("Error uploading general file", e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
@@ -93,8 +126,13 @@ public class ImageServiceImpl implements ImageService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.IMAGE_NOT_FOUND));
 
         deleteFileFromDisk(image.getImageUrl());
-        imageRepository.delete(image);
 
+        // При удалении картинки обнуляем ссылку и в продукте
+        Product product = image.getProduct();
+        product.setImageUrl(null);
+        productRepository.save(product);
+
+        imageRepository.delete(image);
         return SimpleResponse.builder()
                 .httpStatus(HttpStatus.OK)
                 .message("Image successfully deleted")
@@ -103,7 +141,8 @@ public class ImageServiceImpl implements ImageService {
 
     private void deleteFileFromDisk(String imageUrl) {
         try {
-            String pathOnDisk = imageUrl.replace("/products/", BASE_PATH);
+            // Превращаем URL /products/1/file.jpg обратно в путь storage/products/1/file.jpg
+            String pathOnDisk = "storage" + imageUrl;
             Files.deleteIfExists(Paths.get(pathOnDisk));
         } catch (IOException e) {
             log.error("Could not delete physical file: {}", imageUrl, e);
