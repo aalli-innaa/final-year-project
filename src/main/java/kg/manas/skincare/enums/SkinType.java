@@ -4,5 +4,6 @@ public enum SkinType {
     OILY,           // Жирная
     DRY,            // Сухая
     COMBINATION,    // Комбинированная
-    SENSITIVE       // Чувствительная
+    SENSITIVE,     // Чувствительная
+    NORMAL
 }
