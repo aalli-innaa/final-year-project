@@ -38,6 +38,11 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
     @Transactional
     @Override
     public AnalysisResponse performAnalysis(User user, MultipartFile photo) {
+
+        if (user.getUserProfile() == null || user.getUserProfile().getSkinType() == null) {
+            throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
+            // Нужно будет добавить такую ошибку в ErrorCode: "Пожалуйста, заполните профиль перед анализом"
+        }
         // 1. Сохраняем селфи
         UserPhoto userPhoto = userPhotoService.uploadFacePhoto(user, photo);
 
