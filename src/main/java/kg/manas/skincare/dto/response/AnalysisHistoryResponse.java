@@ -1,12 +1,12 @@
 package kg.manas.skincare.dto.response;
 
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 
 import java.time.LocalDateTime;
 
 public record AnalysisHistoryResponse(
         Long analysisId,
-        SkinConcern concern,
+        AcneSeverity concern,
         String imageUrl,
         LocalDateTime createdAt
 ) {}

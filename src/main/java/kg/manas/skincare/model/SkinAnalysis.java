@@ -1,7 +1,7 @@
 package kg.manas.skincare.model;
 
 import jakarta.persistence.*;
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -30,7 +30,7 @@ public class SkinAnalysis {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "primary_concern", nullable = false)
-    private SkinConcern primaryConcern;
+    private AcneSeverity primaryConcern;
 
     private Double confidence;
 

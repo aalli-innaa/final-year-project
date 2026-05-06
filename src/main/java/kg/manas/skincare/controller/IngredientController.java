@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kg.manas.skincare.dto.requests.IngredientRequest;
 import kg.manas.skincare.dto.response.IngredientResponse;
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import kg.manas.skincare.service.IngredientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -50,7 +50,7 @@ public class IngredientController {
     @Operation(summary = "Назначить суперсилу ингредиенту (например: Ретинол -> WRINKLES, сила 0.9)")
     public ResponseEntity<Void> addBenefit(
             @PathVariable Long id,
-            @RequestParam SkinConcern concern,
+            @RequestParam AcneSeverity concern,
             @RequestParam Double score) {
         ingredientService.addBenefitToIngredient(id, concern, score);
         return ResponseEntity.ok().build();

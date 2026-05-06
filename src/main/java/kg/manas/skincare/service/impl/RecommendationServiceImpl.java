@@ -1,7 +1,7 @@
 package kg.manas.skincare.service.impl;
 
 import kg.manas.skincare.dto.response.RecommendationResponse;
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import kg.manas.skincare.enums.SkinType;
 import kg.manas.skincare.model.Ingredient;
 import kg.manas.skincare.model.IngredientConflict;
@@ -26,7 +26,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final IngredientConflictRepository conflictRepository;
 
     @Override
-    public RecommendationResponse getPersonalizedCare(SkinConcern concern, SkinType skinType, int userAge) {
+    public RecommendationResponse getPersonalizedCare(AcneSeverity concern, SkinType skinType, int userAge) {
         // 1. Ищем подходящие по проблеме и типу кожи продукты
         List<Product> candidates = productRepository.findRecommendedProducts(concern, skinType);
 

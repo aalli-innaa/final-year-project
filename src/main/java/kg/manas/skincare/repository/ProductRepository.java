@@ -1,6 +1,6 @@
 package kg.manas.skincare.repository;
 
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import kg.manas.skincare.enums.SkinType;
 import kg.manas.skincare.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,7 +24,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "AND st = :skinType " +                    // ← сравниваем элемент
             "AND p.isActive = true")
     List<Product> findRecommendedProducts(
-            @Param("concern") SkinConcern concern,
+            @Param("concern") AcneSeverity concern,
             @Param("skinType") SkinType skinType
     );
 }

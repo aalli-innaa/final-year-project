@@ -5,7 +5,7 @@ import kg.manas.skincare.dto.response.AnalysisHistoryResponse;
 import kg.manas.skincare.dto.response.AnalysisResponse;
 import kg.manas.skincare.dto.response.ProductResponse;
 import kg.manas.skincare.dto.response.RecommendationResponse;
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import kg.manas.skincare.enums.SkinType;
 import kg.manas.skincare.exceptions.BusinessException;
 import kg.manas.skincare.exceptions.ErrorCode;
@@ -47,7 +47,7 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
         UserPhoto userPhoto = userPhotoService.uploadFacePhoto(user, photo);
 
         // 2. Имитируем работу AI (позже заменим на Python)
-        SkinConcern mockConcern = SkinConcern.ACNE;
+        AcneSeverity mockConcern = AcneSeverity.NONE;
         Double mockConfidence = 0.96;
 
         // 3. Получаем данные профиля безопасно

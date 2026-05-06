@@ -2,7 +2,7 @@ package kg.manas.skincare.service;
 
 import kg.manas.skincare.dto.requests.IngredientRequest;
 import kg.manas.skincare.dto.response.IngredientResponse;
-import kg.manas.skincare.enums.SkinConcern;
+import kg.manas.skincare.enums.AcneSeverity;
 import kg.manas.skincare.exceptions.BusinessException;
 import kg.manas.skincare.exceptions.ErrorCode;
 import kg.manas.skincare.model.Ingredient;
@@ -75,7 +75,7 @@ public class IngredientService {
 
 
     @Transactional
-    public void addBenefitToIngredient(Long ingredientId, SkinConcern concern, Double score) {
+    public void addBenefitToIngredient(Long ingredientId, AcneSeverity concern, Double score) {
         Ingredient ingredient = ingredientRepository.findById(ingredientId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_EXCEPTION, "Ингредиент не найден"));
 
