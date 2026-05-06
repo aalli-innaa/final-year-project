@@ -26,6 +26,12 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import kg.manas.skincare.dto.response.AiResponseDTO; // Импортируй созданный DTO
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,6 +40,9 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
     private final SkinAnalysisRepository analysisRepository;
     private final UserPhotoService userPhotoService;
     private final RecommendationService recommendationService;
+    private final RestTemplate restTemplate; // Добавь инъекцию
+
+    private final String PYTHON_AI_URL = "http://localhost:5000/predict";
 
     @Transactional
     @Override
@@ -41,51 +50,68 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
 
         if (user.getUserProfile() == null || user.getUserProfile().getSkinType() == null) {
             throw new BusinessException(ErrorCode.PROFILE_REQUIRED);
-            // Нужно будет добавить такую ошибку в ErrorCode: "Пожалуйста, заполните профиль перед анализом"
         }
-        // 1. Сохраняем селфи
+
+        // 1. Сохраняем селфи локально
         UserPhoto userPhoto = userPhotoService.uploadFacePhoto(user, photo);
 
-        // 2. Имитируем работу AI (позже заменим на Python)
-        AcneSeverity mockConcern = AcneSeverity.MODERATE;
-        Double mockConfidence = 0.96;
+        // 2. ОТПРАВКА ФОТО В PYTHON AI
+        AcneSeverity aiConcern;
+        Double aiConfidence;
 
-        // 3. Получаем данные профиля безопасно
-        SkinType skinType = SkinType.NORMAL; // Значение по умолчанию
-        int userAge = 0;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        if (user.getUserProfile() != null) {
-            skinType = user.getUserProfile().getSkinType();
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            // Передаем ресурс файла
+            body.add("image", photo.getResource());
 
-            if (user.getUserProfile().getBirthDate() != null) {
-                userAge = Period.between(user.getUserProfile().getBirthDate(), LocalDate.now()).getYears();
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Вызов Flask сервера
+            AiResponseDTO aiResponse = restTemplate.postForObject(PYTHON_AI_URL, requestEntity, AiResponseDTO.class);
+
+            if (aiResponse == null || aiResponse.getAcneSeverity() == null) {
+                throw new BusinessException(ErrorCode.AI_SERVICE_ERROR);
             }
-        } else {
-            // Если профиля нет, можно либо выдать ошибку, либо использовать значения по умолчанию
-            log.warn("User {} has no profile, using default values", user.getUserId());
+
+            aiConcern = AcneSeverity.valueOf(aiResponse.getAcneSeverity());
+            aiConfidence = aiResponse.getConfidence();
+
+            log.info("AI Analysis success: Severity={}, Score={}", aiConcern, aiResponse.getScore());
+
+        } catch (Exception e) {
+            log.error("Error calling AI service: {}", e.getMessage());
+            // Если ИИ упал, можно либо выдать ошибку, либо использовать MILD как fallback
+            throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
 
-// 4. Теперь вызываем сервис с проверенными данными
+        // 3. Получаем данные профиля
+        SkinType skinType = user.getUserProfile().getSkinType();
+        int userAge = Period.between(user.getUserProfile().getBirthDate(), LocalDate.now()).getYears();
+
+        // 4. Вызываем сервис рекомендаций с РЕАЛЬНЫМИ данными от ИИ
         RecommendationResponse recs = recommendationService.getPersonalizedCare(
-                mockConcern,
+                aiConcern,
                 skinType,
                 userAge
         );
 
-        // 4. Сохраняем анализ в БД
+        // 5. Сохраняем анализ в БД
         SkinAnalysis analysis = SkinAnalysis.builder()
                 .user(user)
                 .userPhoto(userPhoto)
-                .primaryConcern(mockConcern)
-                .confidence(mockConfidence)
+                .primaryConcern(aiConcern) // Убедись, что поле в Entity называется так или переименуй
+                .confidence(aiConfidence)
                 .build();
         analysisRepository.save(analysis);
 
-        // 5. Формируем итоговый Response
+        // 6. Формируем итоговый Response
         return AnalysisResponse.builder()
                 .analysisId(analysis.getAnalysisId())
-                .concern(mockConcern)
-                .confidence(mockConfidence)
+                .concern(aiConcern)
+                .confidence(aiConfidence)
                 .imageUrl(userPhoto.getImageUrl())
                 .recommendedProducts(mapToProductDto(recs.products()))
                 .warnings(recs.warnings())
