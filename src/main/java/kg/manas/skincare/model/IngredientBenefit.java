@@ -22,7 +22,7 @@ public class IngredientBenefit {
     private Ingredient ingredient;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "acne_severity", nullable = false) // Магия здесь
     private AcneSeverity benefit;
 
     @Column(name = "efficiency_score")

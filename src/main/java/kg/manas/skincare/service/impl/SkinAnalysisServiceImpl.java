@@ -47,7 +47,7 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
         UserPhoto userPhoto = userPhotoService.uploadFacePhoto(user, photo);
 
         // 2. Имитируем работу AI (позже заменим на Python)
-        AcneSeverity mockConcern = AcneSeverity.NONE;
+        AcneSeverity mockConcern = AcneSeverity.MODERATE;
         Double mockConfidence = 0.96;
 
         // 3. Получаем данные профиля безопасно

@@ -29,8 +29,8 @@ public class SkinAnalysis {
     private UserPhoto userPhoto;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "primary_concern", nullable = false)
-    private AcneSeverity primaryConcern;
+    @Column(name = "acne_severity", nullable = false) // Указываем имя из ТВОЕЙ миграции
+    private AcneSeverity primaryConcern; // Имя поля в Java остается СТАРЫМ
 
     private Double confidence;
 
