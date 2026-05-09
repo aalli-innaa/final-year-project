@@ -3,6 +3,7 @@ package kg.manas.skincare.service.impl;
 import jakarta.transaction.Transactional;
 import kg.manas.skincare.dto.response.AnalysisHistoryResponse;
 import kg.manas.skincare.dto.response.AnalysisResponse;
+import kg.manas.skincare.dto.response.BoundingBoxResponse;
 import kg.manas.skincare.dto.response.ProductResponse;
 import kg.manas.skincare.dto.response.RecommendationResponse;
 import kg.manas.skincare.enums.AcneSeverity;
@@ -58,6 +59,10 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
         // 2. ОТПРАВКА ФОТО В PYTHON AI
         AcneSeverity aiConcern;
         Double aiConfidence;
+        Integer aiCount = null;
+        Integer imageWidth = null;
+        Integer imageHeight = null;
+        List<BoundingBoxResponse> boxes = List.of();
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -78,6 +83,18 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
 
             aiConcern = AcneSeverity.valueOf(aiResponse.getAcneSeverity());
             aiConfidence = aiResponse.getConfidence();
+            aiCount = aiResponse.getCount();
+            imageWidth = aiResponse.getImageWidth();
+            imageHeight = aiResponse.getImageHeight();
+            boxes = aiResponse.getBoxes() == null ? List.of() : aiResponse.getBoxes().stream().map(b ->
+                    BoundingBoxResponse.builder()
+                            .x1(b.getX1())
+                            .y1(b.getY1())
+                            .x2(b.getX2())
+                            .y2(b.getY2())
+                            .confidence(b.getConfidence())
+                            .build()
+            ).toList();
 
             log.info("AI Analysis success: Severity={}, Score={}", aiConcern, aiResponse.getScore());
 
@@ -116,6 +133,10 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
                 .recommendedProducts(mapToProductDto(recs.products()))
                 .warnings(recs.warnings())
                 .createdAt(analysis.getCreatedAt())
+                .acneCount(aiCount)
+                .imageWidth(imageWidth)
+                .imageHeight(imageHeight)
+                .boxes(boxes)
                 .build();
     }
 

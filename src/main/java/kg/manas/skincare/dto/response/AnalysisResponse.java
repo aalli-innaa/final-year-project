@@ -13,5 +13,9 @@ public record AnalysisResponse(
         String imageUrl,
         List<ProductResponse> recommendedProducts,
         List<String> warnings, // Предупреждения о конфликтах ингредиентов
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Integer acneCount,
+        Integer imageWidth,
+        Integer imageHeight,
+        List<BoundingBoxResponse> boxes
 ) {}
