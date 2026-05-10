@@ -140,6 +140,40 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
                 .build();
     }
 
+    @Override
+    public AnalysisResponse getAnalysisDetails(Long id, User user) {
+        // 1. Находим анализ в БД
+        SkinAnalysis analysis = analysisRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND));
+
+        // 2. Проверяем, что этот анализ принадлежит текущему пользователю
+        if (!analysis.getUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 3. Получаем данные профиля для расчета рекомендаций
+        SkinType skinType = user.getUserProfile().getSkinType();
+        int userAge = Period.between(user.getUserProfile().getBirthDate(), LocalDate.now()).getYears();
+
+        // 4. Генерируем рекомендации заново (так как мы не храним их в БД для экономии места)
+        RecommendationResponse recs = recommendationService.getPersonalizedCare(
+                analysis.getPrimaryConcern(),
+                skinType,
+                userAge
+        );
+
+        // 5. Возвращаем полный объект AnalysisResponse
+        return AnalysisResponse.builder()
+                .analysisId(analysis.getAnalysisId())
+                .concern(analysis.getPrimaryConcern())
+                .confidence(analysis.getConfidence())
+                .imageUrl(analysis.getUserPhoto().getImageUrl())
+                .recommendedProducts(mapToProductDto(recs.products()))
+                .warnings(recs.warnings())
+                .createdAt(analysis.getCreatedAt())
+                .build();
+    }
+
     private List<ProductResponse> mapToProductDto(List<Product> products) {
         // Используем готовый метод из ProductResponse
         return products.stream()

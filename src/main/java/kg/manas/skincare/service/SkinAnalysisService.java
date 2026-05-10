@@ -23,4 +23,6 @@ public interface SkinAnalysisService {
      * Удаляет конкретный анализ пользователя
      */
     void deleteAnalysis(Long analysisId, User user);
+
+    AnalysisResponse getAnalysisDetails(Long id, User user);
 }

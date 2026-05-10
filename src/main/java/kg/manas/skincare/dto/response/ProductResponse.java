@@ -14,13 +14,12 @@ public record ProductResponse(
         String usageInstructions,
         String imageUrl,
         String targetGender,
-        List<String> ingredientNames
+        List<String> ingredientNames,
+        List<Long> ingredientIds, // Добавили ID для фронтенда
+        List<String> skinTypes     // Добавили типы кожи
 ) {
     public static ProductResponse fromEntity(Product product) {
-        // 1. Сначала пробуем взять ссылку из текстового поля самого продукта
         String url = product.getImageUrl();
-
-        // 2. Если там пусто, пробуем взять из связанной таблицы Image
         if ((url == null || url.isEmpty()) && product.getImage() != null) {
             url = product.getImage().getImageUrl();
         }
@@ -31,10 +30,16 @@ public record ProductResponse(
                 .brand(product.getBrand())
                 .description(product.getDescription())
                 .usageInstructions(product.getUsageInstructions())
-                .imageUrl(url) // Теперь здесь будет либо ссылка из текста, либо из таблицы
+                .imageUrl(url)
                 .targetGender(product.getTargetGender())
                 .ingredientNames(product.getIngredients() != null
                         ? product.getIngredients().stream().map(Ingredient::getName).toList()
+                        : List.of())
+                .ingredientIds(product.getIngredients() != null
+                        ? product.getIngredients().stream().map(Ingredient::getId).toList()
+                        : List.of())
+                .skinTypes(product.getSuitableSkinTypes() != null
+                        ? product.getSuitableSkinTypes().stream().map(Enum::name).toList()
                         : List.of())
                 .build();
     }

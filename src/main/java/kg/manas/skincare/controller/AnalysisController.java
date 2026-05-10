@@ -39,6 +39,13 @@ public class AnalysisController {
         return analysisService.getUserHistory(user);
     }
 
+    @GetMapping("/{id}")
+    public AnalysisResponse getAnalysisDetails(@PathVariable Long id,
+                                               @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getByEmail(userDetails.getUsername());
+        return analysisService.getAnalysisDetails(id, user);
+    }
+
     @DeleteMapping("/{id}")
     public SimpleResponse delete(@PathVariable Long id,
                                  @AuthenticationPrincipal UserDetails userDetails) {
