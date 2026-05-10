@@ -135,7 +135,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserResponse> getAllUsers() {
         log.info("Fetching all users:");
-        return userRepository.findByRole_RoleName("USER").stream()
+        return userRepository.findByRole_RoleName("ROLE_USER").stream()
                 .map(this::mapToUserResponse)
                 .toList();
     }
