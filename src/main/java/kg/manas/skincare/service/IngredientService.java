@@ -87,4 +87,13 @@ public class IngredientService {
 
         benefitRepository.save(benefit);
     }
+
+    public void deleteIngredient(Long id) {
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+
+        ingredient.setIsActive(false);
+
+        ingredientRepository.save(ingredient);
+    }
 }

@@ -128,6 +128,7 @@ public class UserServiceImpl implements UserService {
                 .isEmailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .role(user.getRole().getRoleName())
                 .build();
     }
 

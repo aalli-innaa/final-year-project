@@ -55,4 +55,12 @@ public class IngredientController {
         ingredientService.addBenefitToIngredient(id, concern, score);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Удалить ингредиент")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        ingredientService.deleteIngredient(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -11,6 +11,7 @@ public record UserResponse (
         boolean blocked,
         boolean isEmailVerified,
         LocalDateTime createdAt,
-        LocalDateTime  updatedAt
+        LocalDateTime  updatedAt,
+        String role
 ) {
 }
