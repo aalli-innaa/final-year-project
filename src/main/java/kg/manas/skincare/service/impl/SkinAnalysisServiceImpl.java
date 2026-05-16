@@ -31,7 +31,10 @@ import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import kg.manas.skincare.dto.response.AiResponseDTO; // Импортируй созданный DTO
+import kg.manas.skincare.dto.response.AiResponseDTO;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +44,8 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
     private final SkinAnalysisRepository analysisRepository;
     private final UserPhotoService userPhotoService;
     private final RecommendationService recommendationService;
-    private final RestTemplate restTemplate; // Добавь инъекцию
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper; // Для конвертации боксов в JSON и обратно
 
     private final String PYTHON_AI_URL = "http://localhost:5000/predict";
 
@@ -69,12 +73,10 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            // Передаем ресурс файла
             body.add("image", photo.getResource());
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // Вызов Flask сервера
             AiResponseDTO aiResponse = restTemplate.postForObject(PYTHON_AI_URL, requestEntity, AiResponseDTO.class);
 
             if (aiResponse == null || aiResponse.getAcneSeverity() == null) {
@@ -96,11 +98,10 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
                             .build()
             ).toList();
 
-            log.info("AI Analysis success: Severity={}, Score={}", aiConcern, aiResponse.getScore());
+            log.info("AI Analysis success: Severity={}, Count={}", aiConcern, aiCount);
 
         } catch (Exception e) {
             log.error("Error calling AI service: {}", e.getMessage());
-            // Если ИИ упал, можно либо выдать ошибку, либо использовать MILD как fallback
             throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
 
@@ -108,19 +109,30 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
         SkinType skinType = user.getUserProfile().getSkinType();
         int userAge = Period.between(user.getUserProfile().getBirthDate(), LocalDate.now()).getYears();
 
-        // 4. Вызываем сервис рекомендаций с РЕАЛЬНЫМИ данными от ИИ
+        // 4. Вызываем сервис рекомендаций
         RecommendationResponse recs = recommendationService.getPersonalizedCare(
                 aiConcern,
                 skinType,
                 userAge
         );
 
-        // 5. Сохраняем анализ в БД
+        // 5. Сохраняем анализ в БД (ДОБАВЛЕНЫ НОВЫЕ ПОЛЯ)
+        String boxesJson = "[]";
+        try {
+            boxesJson = objectMapper.writeValueAsString(boxes);
+        } catch (Exception e) {
+            log.error("Failed to serialize boxes to JSON", e);
+        }
+
         SkinAnalysis analysis = SkinAnalysis.builder()
                 .user(user)
                 .userPhoto(userPhoto)
-                .primaryConcern(aiConcern) // Убедись, что поле в Entity называется так или переименуй
+                .primaryConcern(aiConcern)
                 .confidence(aiConfidence)
+                .acneCount(aiCount)
+                .imageWidth(imageWidth)
+                .imageHeight(imageHeight)
+                .boxes(boxesJson) // Сохраняем как строку JSON
                 .build();
         analysisRepository.save(analysis);
 
@@ -146,23 +158,32 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
         SkinAnalysis analysis = analysisRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ANALYSIS_NOT_FOUND));
 
-        // 2. Проверяем, что этот анализ принадлежит текущему пользователю
+        // 2. Проверяем владельца
         if (!analysis.getUser().getUserId().equals(user.getUserId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 3. Получаем данные профиля для расчета рекомендаций
+        // 3. Десериализация боксов из JSON (ДОБАВЛЕНО)
+        List<BoundingBoxResponse> boxes = List.of();
+        try {
+            if (analysis.getBoxes() != null) {
+                boxes = objectMapper.readValue(analysis.getBoxes(), new TypeReference<List<BoundingBoxResponse>>() {});
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse boxes from database", e);
+        }
+
+        // 4. Рекомендации
         SkinType skinType = user.getUserProfile().getSkinType();
         int userAge = Period.between(user.getUserProfile().getBirthDate(), LocalDate.now()).getYears();
 
-        // 4. Генерируем рекомендации заново (так как мы не храним их в БД для экономии места)
         RecommendationResponse recs = recommendationService.getPersonalizedCare(
                 analysis.getPrimaryConcern(),
                 skinType,
                 userAge
         );
 
-        // 5. Возвращаем полный объект AnalysisResponse
+        // 5. Возвращаем полный объект (ДОБАВЛЕНЫ ПОЛЯ ИЗ БД)
         return AnalysisResponse.builder()
                 .analysisId(analysis.getAnalysisId())
                 .concern(analysis.getPrimaryConcern())
@@ -171,11 +192,14 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
                 .recommendedProducts(mapToProductDto(recs.products()))
                 .warnings(recs.warnings())
                 .createdAt(analysis.getCreatedAt())
+                .acneCount(analysis.getAcneCount())
+                .imageWidth(analysis.getImageWidth())
+                .imageHeight(analysis.getImageHeight())
+                .boxes(boxes)
                 .build();
     }
 
     private List<ProductResponse> mapToProductDto(List<Product> products) {
-        // Используем готовый метод из ProductResponse
         return products.stream()
                 .map(ProductResponse::fromEntity)
                 .toList();
@@ -185,12 +209,29 @@ public class SkinAnalysisServiceImpl implements SkinAnalysisService {
     public List<AnalysisHistoryResponse> getUserHistory(User user) {
         return analysisRepository.findByUser_UserIdOrderByCreatedAtDesc(user.getUserId())
                 .stream()
-                .map(a -> new AnalysisHistoryResponse(
-                        a.getAnalysisId(),
-                        a.getPrimaryConcern(),
-                        a.getUserPhoto().getImageUrl(),
-                        a.getCreatedAt()
-                )).toList();
+                .map(a -> {
+                    // Парсим боксы из строки обратно в список для каждого элемента истории
+                    List<BoundingBoxResponse> boxesList = List.of();
+                    try {
+                        if (a.getBoxes() != null) {
+                            boxesList = objectMapper.readValue(a.getBoxes(), new TypeReference<List<BoundingBoxResponse>>() {});
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to parse boxes for history item {}", a.getAnalysisId());
+                    }
+
+                    return new AnalysisHistoryResponse(
+                            a.getAnalysisId(),
+                            a.getPrimaryConcern(),
+                            a.getUserPhoto().getImageUrl(),
+                            a.getCreatedAt(),
+                            a.getConfidence(),
+                            a.getAcneCount(),
+                            a.getImageWidth(),
+                            a.getImageHeight(),
+                            boxesList
+                    );
+                }).toList();
     }
 
     @Transactional

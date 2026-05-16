@@ -34,6 +34,14 @@ public class SkinAnalysis {
 
     private Double confidence;
 
+    @Column(columnDefinition = "TEXT")
+    private String boxes; // Координаты в формате JSON
+
+    private Integer acneCount;
+    private Integer imageWidth;
+    private Integer imageHeight;
+    //
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
