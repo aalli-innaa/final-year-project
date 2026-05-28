@@ -26,6 +26,9 @@ public class UserPhoto {
     @Column(nullable = false)
     private String imageUrl;
 
+    @Column(name = "public_id") // ← новое поле для Cloudinary
+    private String publicId;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

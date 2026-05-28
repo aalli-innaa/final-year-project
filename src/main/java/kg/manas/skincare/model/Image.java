@@ -30,6 +30,9 @@ public class Image {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @Column(name = "public_id") // ← новое поле для Cloudinary
+    private String publicId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

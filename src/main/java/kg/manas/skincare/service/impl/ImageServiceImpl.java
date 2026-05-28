@@ -1,5 +1,7 @@
 package kg.manas.skincare.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import jakarta.transaction.Transactional;
 import kg.manas.skincare.dto.response.ImageResponse;
 import kg.manas.skincare.dto.response.SimpleResponse;
@@ -17,9 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,9 +29,7 @@ public class ImageServiceImpl implements ImageService {
 
     private final ImageRepository imageRepository;
     private final ProductRepository productRepository;
-
-    // Базовый путь: storage/products/
-    private static final String BASE_PATH = "storage/products/";
+    private final Cloudinary cloudinary;
 
     @Transactional
     @Override
@@ -42,52 +41,47 @@ public class ImageServiceImpl implements ImageService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         try {
-            // 1. Создаем путь: storage/products/{productId}/
-            String dirPath = BASE_PATH + productId + "/";
-            Files.createDirectories(Paths.get(dirPath));
-
-            // 2. Если фото уже было в таблице images — удаляем старый файл с диска
+            // 1. Если фото уже было — удаляем старое из Cloudinary
             Optional<Image> existingImageOpt = imageRepository.findByProduct_Id(productId);
-            existingImageOpt.ifPresent(img -> deleteFileFromDisk(img.getImageUrl()));
+            existingImageOpt.ifPresent(img -> deleteFromCloudinary(img.getPublicId()));
 
-            // 3. Генерируем имя и сохраняем файл
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(dirPath).resolve(fileName);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            // 2. Загружаем в Cloudinary в папку products/{productId}/
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("folder", "products/" + productId)
+            );
 
-            // 4. Формируем URL: /products/{productId}/{fileName}
-            String imageUrl = "/products/" + productId + "/" + fileName;
+            String imageUrl  = (String) uploadResult.get("secure_url"); // https://res.cloudinary.com/...
+            String publicId  = (String) uploadResult.get("public_id");  // нужен для удаления
 
-            // 5. ОБНОВЛЯЕМ ТЕКСТОВОЕ ПОЛЕ В ТАБЛИЦЕ PRODUCTS (для синхронизации)
+            // 3. Синхронизируем URL в таблице products
             product.setImageUrl(imageUrl);
             productRepository.save(product);
 
-            // 6. Обновляем или создаем запись в таблице IMAGES
+            // 4. Обновляем или создаём запись в таблице images
             Image image;
             if (existingImageOpt.isPresent()) {
                 image = existingImageOpt.get();
                 image.setImageUrl(imageUrl);
+                image.setPublicId(publicId);
             } else {
                 image = Image.builder()
                         .product(product)
                         .imageUrl(imageUrl)
+                        .publicId(publicId)
                         .build();
             }
 
             imageRepository.save(image);
-            log.info("Image saved in folder {} for product {}", dirPath, productId);
+            log.info("Image uploaded to Cloudinary for product {}: {}", productId, imageUrl);
 
             return mapToResponse(image);
 
         } catch (IOException e) {
-            log.error("Error saving file for product {}", productId, e);
+            log.error("Error uploading image to Cloudinary for product {}", productId, e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
-
-    // ImageServiceImpl.java
-
-    private static final String GENERAL_PATH = "storage/products/general/";
 
     @Override
     public String uploadFile(MultipartFile file) {
@@ -95,19 +89,14 @@ public class ImageServiceImpl implements ImageService {
             throw new BusinessException(ErrorCode.FILE_REQUIRED);
 
         try {
-            // Создаем общую папку storage/products/general/
-            Files.createDirectories(Paths.get(GENERAL_PATH));
-
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(GENERAL_PATH).resolve(fileName);
-
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Возвращаем чистую ссылку
-            return "/products/general/" + fileName;
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("folder", "products/general")
+            );
+            return (String) uploadResult.get("secure_url");
 
         } catch (IOException e) {
-            log.error("Error uploading general file", e);
+            log.error("Error uploading general file to Cloudinary", e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
@@ -125,9 +114,10 @@ public class ImageServiceImpl implements ImageService {
         Image image = imageRepository.findById(imageId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.IMAGE_NOT_FOUND));
 
-        deleteFileFromDisk(image.getImageUrl());
+        // Удаляем из Cloudinary по publicId
+        deleteFromCloudinary(image.getPublicId());
 
-        // При удалении картинки обнуляем ссылку и в продукте
+        // Обнуляем ссылку в продукте
         Product product = image.getProduct();
         product.setImageUrl(null);
         productRepository.save(product);
@@ -139,13 +129,13 @@ public class ImageServiceImpl implements ImageService {
                 .build();
     }
 
-    private void deleteFileFromDisk(String imageUrl) {
+    private void deleteFromCloudinary(String publicId) {
+        if (publicId == null) return;
         try {
-            // Превращаем URL /products/1/file.jpg обратно в путь storage/products/1/file.jpg
-            String pathOnDisk = "storage" + imageUrl;
-            Files.deleteIfExists(Paths.get(pathOnDisk));
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            log.info("Deleted from Cloudinary: {}", publicId);
         } catch (IOException e) {
-            log.error("Could not delete physical file: {}", imageUrl, e);
+            log.error("Could not delete from Cloudinary: {}", publicId, e);
         }
     }
 
